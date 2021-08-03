@@ -1,3 +1,3 @@
-# NLP_text_analysis
+# NLP text analysis
 
-Fake news analyzer
+Fake news analyzer, basic NLU made using Tensorflow

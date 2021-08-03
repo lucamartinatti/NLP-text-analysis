@@ -20,6 +20,14 @@ from tensorflow.python.keras.backend import concatenate
 from tensorflow.python.ops.gen_array_ops import shape
 
 
+def plot_graphs(history, string):
+  plt.plot(history.history[string])
+  plt.plot(history.history['val_'+string])
+  plt.xlabel("Epochs")
+  plt.ylabel(string)
+  plt.legend([string, 'val_'+string])
+  plt.show()
+
 if __name__=="__main__":
 
     # Input and parameters
@@ -30,8 +38,9 @@ if __name__=="__main__":
     padding_type='post'
     oov_tok = "<OOV>"
     training_perc = 90
+    num_epochs = 100
 
-    # Load and pre-process the dataset
+    ### DATA LOADING ###
     df_ture = pd.read_csv('./archive/True.csv')
     df_fake = pd.read_csv('./archive/Fake.csv')
 
@@ -49,22 +58,44 @@ if __name__=="__main__":
 
     # Create training and testing dataset
     val = round(dataset.shape[0]*training_perc/100)
+    features = ['title']
+    target = ['Fake']
+    
     train_dataset = dataset[:val]
     test_dataset = dataset[val:]
 
     # Tokenization
     tokenizer = Tokenizer(num_words=vocab_size, oov_token=oov_tok)
-    tokenizer.fit_on_texts(train_dataset)
+    tokenizer.fit_on_texts(train_dataset['title'])
 
     word_index = tokenizer.word_index
 
+    # Labels
+    training_labels = train_dataset['Fake']
+    testing_labels = test_dataset['Fake'].to_numpy()
+
+    # Features
     training_sequences = tokenizer.texts_to_sequences(train_dataset['title'])
     training_padded = pad_sequences(training_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
 
     testing_sequences = tokenizer.texts_to_sequences(test_dataset['title'])
     testing_padded = pad_sequences(testing_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
 
+    # Define model
+    model = tf.keras.Sequential([
+        tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
+        tf.keras.layers.GlobalAveragePooling1D(),
+        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(1, activation='sigmoid')
+    ])
+    model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
 
-   
+    ### TRAINING PHASE ###
+
+    history = model.fit(training_padded, training_labels, epochs=num_epochs, validation_data=(testing_padded, testing_labels), verbose=1)
     
- 
+    # Plot training results
+    plot_graphs(history, "accuracy")
+    plot_graphs(history, "loss")
+
+    

@@ -4,6 +4,10 @@ NLU net with Tensorflow
 
 Version 0.0
 
+Author: Luca Martinatti
+
+Original release: 03/08/2021
+
 '''
 
 import numpy as np
